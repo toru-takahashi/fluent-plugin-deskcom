@@ -7,6 +7,12 @@ This plugin is still experimental.
 This plugin depends on [desk library](https://github.com/chriswarren/desk)
 Also, please see [Desk API v2](http://dev.desk.com/)
 
+## Quick Start
+
+If you want to use fluent-plugin-deskcom on Heroku, you can start easily.
+Please see the following page, and click Deploy to Heroku button!
+https://github.com/toru-takahashi/heroku-td-agent
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -30,8 +36,7 @@ Your Desk.com API key, secret, token and token secret can be found by following 
 1. Log in to your Desk.com admin panel using your personal URL (http://your-account.desk.com/admin).
 2. Click on Settings:
 ![step2](http://gyazo.com/020298636ef217e0d3bb7ee7b6a0bd31.png)
-3. From the left menu select API > My Applications:
-![step3](http://gyazo.com/ae64bf3deb67704acddaea875e080540.png)
+3. From the left menu select API > My Applications.
 4. If you don’t already have an application defined for TreasureData, create one by clicking on the “Add API Application” button and enter the following information:
 ![step4-1](http://gyazo.com/803b486ed3a86c77af55819e83d4d85b.png)
 ![step4-2](http://gyazo.com/97a5624030f1bc05fe040e386d30f7dd.png)
@@ -41,6 +46,8 @@ Your Desk.com API key, secret, token and token secret can be found by following 
 ![step6](http://gyazo.com/7f057fb4b6b88b616f9895d4d5b69e9d.png)
 
 ## Usage
+
+The followings are examples of fluentd.conf(td-agent.conf)
 
 ### Cases Config Sample
 
@@ -167,8 +174,6 @@ Your Desk.com API key, secret, token and token secret can be found by following 
   buffer_path /var/log/td-agent/tdlog
 </match>
 ```
-
-Please check store_file's permission to write by fluentd.
 
 ## TO DO
 
