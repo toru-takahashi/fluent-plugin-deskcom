@@ -23,6 +23,27 @@ Or install it yourself as:
 
     $ gem install fluent-plugin-deskcom
 
+Get Desk.com API key
+
+Your Desk.com API key, secret, token and token secret can be found by following this guide:
+
+1. Log in to your Desk.com admin panel using your personal URL (http://your-account.desk.com/admin).
+2. Click on Settings:
+![step2](http://gyazo.com/020298636ef217e0d3bb7ee7b6a0bd31.png)
+
+3. From the left menu select API > My Applications:
+![step3](http://gyazo.com/ae64bf3deb67704acddaea875e080540.png)
+
+4. If you don’t already have an application defined for TreasureData, create one by clicking on the “Add API Application” button and enter the following information:
+![step4-1](http://gyazo.com/803b486ed3a86c77af55819e83d4d85b.png)
+![step4-2](http://gyazo.com/97a5624030f1bc05fe040e386d30f7dd.png)
+
+5. Find your Key and Secret codes for the TreasureData API application:
+![step5](http://gyazo.com/895bf963f01b65254e38c534855a1914.png)
+
+6. Find your Token and Token secret by clicking on the Your Access Token link:
+![step6](http://gyazo.com/7f057fb4b6b88b616f9895d4d5b69e9d.png)
+
 ## Usage
 
 ### Cases Config Sample
