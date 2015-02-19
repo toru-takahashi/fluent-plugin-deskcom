@@ -88,7 +88,7 @@ class DeskcomInput < Fluent::Input
         cases = Desk.cases(:since_updated_at => @stored_time, :page => page, :per_page => @per_page)
         # Sleep for rate limit
         # ToDo: Check body "Too Many Requests" and Sleep
-        sleep(1)
+        sleep(2)
 
         cases.each do |c|
           get_content(c)
@@ -101,13 +101,13 @@ class DeskcomInput < Fluent::Input
         cases = Desk.cases(:since_updated_at => @stored_time, :page => page, :per_page => @per_page)        
         # Sleep for rate limit
         # ToDo: Check body "Too Many Requests" and Sleep
-        sleep(1)
+        sleep(2)
 
         cases.each do |c|
           Desk.case_replies(c.id).each do |r|
             # Sleep for rate limit
             # ToDo: Check body "Too Many Requests" and Sleep
-            sleep(1)
+            sleep(2)
             
             r[:case_id] = c.id
             get_content(r) if c.count > 0
