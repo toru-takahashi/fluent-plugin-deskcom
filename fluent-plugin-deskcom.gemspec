@@ -3,7 +3,7 @@ $:.push File.expand_path('../lib', __FILE__)
 
 Gem::Specification.new do |spec|
   spec.name          = "fluent-plugin-deskcom"
-  spec.version       = "0.0.1"
+  spec.version       = "0.0.2"
   spec.authors       = ["Toru Takahashi"]
   spec.email         = ["torutakahashi.ayashi@gmail.com"]
   spec.summary       = %q{Input plugin to collect data from Deskcom.}
