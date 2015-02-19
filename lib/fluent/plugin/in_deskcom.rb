@@ -49,7 +49,6 @@ class DeskcomInput < Fluent::Input
     @tick = @interval * 60
 
     @stored_time = load_store_file
-    @started_time = Time.now.to_i
     @per_page = DEFAULT_PER_PAGE
 
     Desk.configure do |config|
