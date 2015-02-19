@@ -18,6 +18,7 @@ class DeskcomInput < Fluent::Input
   config_param :input_api,            :string, :default => 'cases'
   config_param :tag,                  :string, :default => nil
   config_param :time_column,          :string, :default => nil
+  config_param :interval,             :integer,:default => 5
 
   def initialize
     super
@@ -45,6 +46,7 @@ class DeskcomInput < Fluent::Input
       $log.warn("stored_time_file path is missing")
     end
 
+    @tick = @interval * 60
 
     @stored_time = load_store_file
     @started_time = Time.now.to_i
@@ -65,10 +67,21 @@ class DeskcomInput < Fluent::Input
   end
 
   def shutdown
-    @thread.kill
+    super
+    @thread.terminate
+    @thread.join
   end
 
   def run
+    while true
+      @started_time = Time.now.to_i
+      get_stream
+      save_store_file unless !@store_file
+      sleep @tick
+    end
+  end
+
+  def get_stream()
     page = 0
     if @input_api == 'cases' then
       begin
@@ -81,6 +94,7 @@ class DeskcomInput < Fluent::Input
         cases.each do |c|
           get_content(c)
         end
+        $log.info "Case total entry: #{cases.total_entries} page: #{page}"
       end while (cases.total_entries/@per_page.to_f).ceil > page
     elsif @input_api == 'replies'
       begin
@@ -100,9 +114,9 @@ class DeskcomInput < Fluent::Input
             get_content(r) if c.count > 0
           end
         end
+        $log.info "Case total entry include reply #{cases.total_entries} page: #{page}"
       end while (cases.total_entries/@per_page.to_f).ceil > page
     end
-    save_store_file unless !@store_file
   rescue => e
     $log.error "deskcom run: #{e.message}"
   end
