@@ -2,11 +2,13 @@ module Fluent
 class DeskcomInput < Fluent::Input
   Fluent::Plugin.register_input('deskcom', self)
 
-  # un-support yet: nest flat
+  # unsupported yet: nest flat
   OUTPUT_FORMAT_TYPE = %w(simple)
-  # un-support yet: brand article reply ~
+  # unsupported yet: brand article reply ~
   INPUT_API_TYPE = %w(cases replies)
   DEFAULT_PER_PAGE = 50
+
+  SORT_DIRECTION_TYPE=%w(asc desc)
 
   config_param :subdomain,            :string, :default => nil
   config_param :consumer_key,         :string, :default => nil
@@ -19,6 +21,7 @@ class DeskcomInput < Fluent::Input
   config_param :tag,                  :string, :default => nil
   config_param :time_column,          :string, :default => nil
   config_param :interval,             :integer,:default => 5
+  config_param :sort_direction,       :string, :default => 'asc'
 
   def initialize
     super
@@ -36,6 +39,10 @@ class DeskcomInput < Fluent::Input
 
     if !INPUT_API_TYPE.include?(@input_api)
       raise Fluent::ConfigError, "input_api value undefined #{@input_api}"
+    end
+
+    if !SORT_DIRECTION_TYPE.include?(@sort_direction)
+      raise Fluent::ConfigError, "sort_direction value undefined #{@sort_direction}"
     end
 
     if !@consumer_key || !@consumer_secret || !@oauth_token || !@oauth_token_secret
@@ -80,41 +87,53 @@ class DeskcomInput < Fluent::Input
     end
   end
 
-  def get_stream()
-    page = 0
-    if @input_api == 'cases' then
+  def get_stream
+    page = 1
+    loop do
+      cases = nil
       begin
-        page = page + 1
-        cases = Desk.cases(:since_updated_at => @stored_time, :page => page, :per_page => @per_page)
-        # Sleep for rate limit
-        # ToDo: Check body "Too Many Requests" and Sleep
-        sleep(2)
+        cases = Desk.cases(:since_updated_at => @stored_time, :max_updated_at => @started_time,
+                           :page => page, :per_page => @per_page,
+                           :sort_field => 'updated_at', :sort_direction => @sort_direction)
+      rescue Desk::NotFound
+        puts "No more records: #{e.message}"
+        break
+      end
 
+      if @input_api == 'cases' then
         cases.each do |c|
           get_content(c)
         end
-        $log.info "Case total entry: #{cases.total_entries} page: #{page}"
-      end while (cases.total_entries/@per_page.to_f).ceil > page
-    elsif @input_api == 'replies'
-      begin
-        page = page + 1
-        cases = Desk.cases(:since_updated_at => @stored_time, :page => page, :per_page => @per_page)        
-        # Sleep for rate limit
-        # ToDo: Check body "Too Many Requests" and Sleep
-        sleep(2)
+        $log.info "Case total entries: #{cases.total_entries} page: #{page}"
 
+      elsif @input_api == 'replies'
         cases.each do |c|
           Desk.case_replies(c.id).each do |r|
-            # Sleep for rate limit
-            # ToDo: Check body "Too Many Requests" and Sleep
-            sleep(2)
-            
             r[:case_id] = c.id
             get_content(r) if c.count > 0
           end
         end
-        $log.info "Case total entry include reply #{cases.total_entries} page: #{page}"
-      end while (cases.total_entries/@per_page.to_f).ceil > page
+        $log.info "Case total entries with replies: #{cases.total_entries} page: #{page}"
+      end
+
+      page = page + 1
+      # if getting above 500 pages limit for a search
+      #   (http://dev.desk.com/API/cases/#list), reset the reference point and
+      #   the page count to 1
+      if page >= 500
+        if @sort_direction == 'asc'
+          # if sorting by ascending 'updated_at', reset the lower filter limit
+          #   to focus on the upper part of the records that would reside in the
+          #   'pages' past 500
+          @stored_time = cases.map(&:updated_at).sort.last
+        else
+          # if sorting by descending 'updated_at', reset the upper filter limit
+          #   to focus on the lower part of the records that would reside in the
+          #   'pages' past 500
+          @started_time = cases.map(&:updated_at).sort.first
+        end
+        page = 1
+      end
     end
   rescue => e
     $log.error "deskcom run: #{e.message}"
@@ -125,14 +144,6 @@ class DeskcomInput < Fluent::Input
     when 'simple'
       record = Hash.new
       status.each_pair do |k,v|
-        # @stored_time <= store data's updated time < @started_time
-        if (k == 'updated_at') then
-          at_time = Time.parse(v).to_i
-          if (at_time >= @started_time) || (at_time < @stored_time) then
-            next
-          end
-        end
-
         if (!@time_column.nil? && k == "#{@time_column}") then
           @time_value = Time.parse(v).to_i rescue nil
         end
