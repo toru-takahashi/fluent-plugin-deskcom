@@ -95,7 +95,7 @@ class DeskcomInput < Fluent::Input
         cases = Desk.cases(:since_updated_at => @stored_time, :max_updated_at => @started_time,
                            :page => page, :per_page => @per_page,
                            :sort_field => 'updated_at', :sort_direction => @sort_direction)
-      rescue Desk::NotFound
+      rescue Desk::NotFound => e
         puts "No more records: #{e.message}"
         break
       end
