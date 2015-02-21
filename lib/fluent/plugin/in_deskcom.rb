@@ -55,7 +55,6 @@ class DeskcomInput < Fluent::Input
 
     @tick = @interval * 60
 
-    @stored_time = load_store_file
     @per_page = DEFAULT_PER_PAGE
 
     Desk.configure do |config|
@@ -81,8 +80,9 @@ class DeskcomInput < Fluent::Input
   def run
     while true
       @started_time = Time.now.to_i
+      @stored_time = load_store_file(@store_file)
       get_stream
-      save_store_file unless !@store_file
+      save_store_file(@store_file, @started_time) unless !@store_file
       sleep @tick
     end
   end
@@ -169,34 +169,29 @@ class DeskcomInput < Fluent::Input
     $log.error "deskcom get_content: #{e.message}"
   end
 
-  # => int
-  def load_store_file
-    begin
-      f = Pathname.new(@store_file)
-      stored_time = 0
-      f.open('r') do |f|
-        stored = YAML.load_file(f)
-        stored_time = stored[:time].to_i
-      end
-      $log.info "deskcom: Load #{@store_file}: #{@stored_time}"
-    rescue => e
-      $log.warn "deskcom: Can't load store_file #{e.message}"
-      return 0
+  def load_store_file(store_file)
+    f = Pathname.new(store_file)
+    stored_time = 0
+    f.open('r') do |f|
+      stored = YAML.load_file(f)
+      stored_time = stored[:time].to_i
     end
+    $log.info "deskcom: Load #{store_file}: #{stored_time}"
     return stored_time
+  rescue => e
+    $log.warn "deskcom: Can't load store_file #{e.message}"
+    return 0
   end
 
-  def save_store_file
-    begin
-      f = Pathname.new(@store_file)
-      f.open('w') do |f|
-        data = {:time => @started_time}
-        YAML.dump(data, f)
-      end
-      $log.info "deskcom: Save started_time: #{@started_time} to #{@store_file}"
-    rescue => e
-      $log.warn "deskcom: Can't save store_file #{e.message}"
+  def save_store_file(store_file, time)
+    f = Pathname.new(store_file)
+    f.open('w') do |f|
+      data = {:time => time}
+      YAML.dump(data, f)
     end
+    $log.info "deskcom: Save started_time: #{time} to #{store_file}"
+  rescue => e
+    $log.warn "deskcom: Can't save store_file #{e.message}"
   end
 
 end
