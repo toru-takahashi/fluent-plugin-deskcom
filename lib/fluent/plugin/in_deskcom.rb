@@ -96,7 +96,7 @@ class DeskcomInput < Fluent::Input
                            :page => page, :per_page => @per_page,
                            :sort_field => 'updated_at', :sort_direction => @sort_direction)
       rescue Desk::NotFound => e
-        puts "No more records: #{e.message}"
+        $log.info "No more records: #{e.message}"
         break
       end
 
@@ -121,16 +121,17 @@ class DeskcomInput < Fluent::Input
       #   (http://dev.desk.com/API/cases/#list), reset the reference point and
       #   the page count to 1
       if page >= 500
+        require 'time'
         if @sort_direction == 'asc'
           # if sorting by ascending 'updated_at', reset the lower filter limit
           #   to focus on the upper part of the records that would reside in the
           #   'pages' past 500
-          @stored_time = cases.map(&:updated_at).sort.last
+          @stored_time = Time.parse(cases.map(&:updated_at).sort.last).to_i
         else
           # if sorting by descending 'updated_at', reset the upper filter limit
           #   to focus on the lower part of the records that would reside in the
           #   'pages' past 500
-          @started_time = cases.map(&:updated_at).sort.first
+          @started_time = Time.parse(cases.map(&:updated_at).sort.first).to_i
         end
         page = 1
       end
